@@ -12,7 +12,7 @@ def showAndWait(img):
 
 def main(argv):
     
-    default_file = 'messerMuenze.jpg'
+    default_file = 'messerMuenze2.jpg'
     filename = argv[0] if len(argv) > 0 else default_file
     # Loads an image
     src = cv.imread(cv.samples.findFile(filename), cv.IMREAD_COLOR)
