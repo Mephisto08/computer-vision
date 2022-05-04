@@ -6,7 +6,7 @@ muenzeSize = 2.325
  
 def showAndWait(img):
     cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("Image", (500, 900))
+    cv2.resizeWindow("Image", (900, 700))
     cv2.imshow("Image", img)
     cv2.waitKey(0)
 
@@ -14,6 +14,7 @@ def showAndWait(img):
 def calcLength(box, pixelsPerMetric):
     """
     Berechnet die Länge eines Rechtecks. Hierfür wird aus beiden Seiten der Durschschnitt berechnet.
+    Berechnugn wird über die Diagonaleneckpunkte berechnet.
     """
     length = (abs(box[0][1] - box[2][1])/pixelsPerMetric + abs(box[1][1] - box[3][1])/pixelsPerMetric) / 2
     return length
@@ -21,13 +22,14 @@ def calcLength(box, pixelsPerMetric):
 def calcWitdh(box, pixelsPerMetric):
     """
     Berechnet die Breite eines Rechtecks. Hierfür wird aus beiden Seiten der Durschschnitt berechnet.
+    Berechnugn wird über die Diagonaleneckpunkte berechnet.
     """
     witdh = (abs(box[0][0] - box[2][0])/pixelsPerMetric + abs(box[1][0] - box[3][0])/pixelsPerMetric) / 2
     return witdh
 
 def main(argv):
     
-    default_file = 'messerMuenze2.jpg'
+    default_file = 'messerMuenze4.jpg'
     filename = argv[0] if len(argv) > 0 else default_file
     # Loads an image
     src = cv2.imread(cv2.samples.findFile(filename), cv2.IMREAD_COLOR)
@@ -52,7 +54,6 @@ def main(argv):
         durchmesser = circles[0][0][2] * 2
         circles = np.uint16(np.around(circles))
         for i in circles[0, :]:
-            print("Kreis: ", i)
             center = (i[0], i[1])
             # circle center
             cv2.circle(src, center, 1, (0, 100, 100), 3)
@@ -85,11 +86,9 @@ def main(argv):
 
         witdh = calcWitdh(box, pixelsPerMetric)
         length = calcLength(box, pixelsPerMetric)
-        print(witdh)
-        print(length )
-        #print("breite", witdh)
-        #print("länge", length)
 
+        print("w: ", witdh)
+        print("l: ", length)
         # löscht das Rechteck aus was um das gesamte Bild gezeichnet wird
         # hierfür wird überprüft, ob eine Korrdinate 0/0 entspricht
         if (box[0][0] == 0 and box[0][1] == 0) \
@@ -103,7 +102,8 @@ def main(argv):
         # prüft, ob die länge des rechtecks mindestens x cm lang ist
         if length <= 10.0:
             continue
-
+        cv2.drawContours(src, [box], 0, (0, 255, 255), 10)
+        showAndWait(src) 
         filterdBoxContours.append(box)
     showAndWait(src)
 
