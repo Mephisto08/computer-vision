@@ -1,8 +1,9 @@
 import sys
 import cv2
 import numpy as np
+from scipy.__config__ import show
 
-muenzeSize = 2.325
+muenzeSize = 2.3
  
 def showAndWait(img):
     cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
@@ -29,7 +30,7 @@ def calcWitdh(box, pixelsPerMetric):
 
 def main(argv):
     
-    default_file = 'messerMuenze4.jpg'
+    default_file = 'messerMuenze3.jpg'
     filename = argv[0] if len(argv) > 0 else default_file
     # Loads an image
     src = cv2.imread(cv2.samples.findFile(filename), cv2.IMREAD_COLOR)
@@ -87,8 +88,6 @@ def main(argv):
         witdh = calcWitdh(box, pixelsPerMetric)
         length = calcLength(box, pixelsPerMetric)
 
-        print("w: ", witdh)
-        print("l: ", length)
         # löscht das Rechteck aus was um das gesamte Bild gezeichnet wird
         # hierfür wird überprüft, ob eine Korrdinate 0/0 entspricht
         if (box[0][0] == 0 and box[0][1] == 0) \
@@ -97,30 +96,30 @@ def main(argv):
                 or (box[3][0] == 0 and box[3][1] == 0):
             continue
         #prüft, ob die breite eines Rechtecks mindestens x cm aufweist
-        if witdh <= 1.0:
+        if witdh <= 1.0 and length <= 1.0:
             continue
         # prüft, ob die länge des rechtecks mindestens x cm lang ist
-        if length <= 10.0:
+        if length <= 10.0 and witdh <= 10.0:
             continue
-        cv2.drawContours(src, [box], 0, (0, 255, 255), 10)
-        showAndWait(src) 
+        
+
         filterdBoxContours.append(box)
     showAndWait(src)
 
     obj = None
     for i, box in enumerate(filterdBoxContours):
-        print(box)
         # TODO: Wenn mehr als ein Element erkannt wird mit den Größen 1cm breite 10 cm länge
         obj = box
         cv2.drawContours(src, [box], 0, (0, 255, 255), 10)
  
-    showAndWait(src)
-
     length = calcLength(box, pixelsPerMetric)
     witdh = calcWitdh(box, pixelsPerMetric)
 
     print("Länge des Messers: ",   length) 
     print("Breite des Messers: ",   witdh) 
+
+    showAndWait(src)
+
 
     return 0
     
