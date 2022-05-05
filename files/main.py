@@ -2,12 +2,14 @@ import sys
 import cv2
 import numpy as np
 from scipy.__config__ import show
+import pathlib
+import os
 
 muenzeSize = 2.3
  
 def showAndWait(img):
     cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("Image", (900, 700))
+    cv2.resizeWindow("Image", (500, 700))
     cv2.imshow("Image", img)
     cv2.waitKey(0)
 
@@ -17,7 +19,10 @@ def calcLength(box, pixelsPerMetric):
     Berechnet die Länge eines Rechtecks. Hierfür wird aus beiden Seiten der Durschschnitt berechnet.
     Berechnugn wird über die Diagonaleneckpunkte berechnet.
     """
-    length = (abs(box[0][1] - box[2][1])/pixelsPerMetric + abs(box[1][1] - box[3][1])/pixelsPerMetric) / 2
+    try:
+        length = (abs(box[0][1] - box[2][1])/pixelsPerMetric + abs(box[1][1] - box[3][1])/pixelsPerMetric) / 2
+    except:
+        return None
     return length
 
 def calcWitdh(box, pixelsPerMetric):
@@ -25,24 +30,17 @@ def calcWitdh(box, pixelsPerMetric):
     Berechnet die Breite eines Rechtecks. Hierfür wird aus beiden Seiten der Durschschnitt berechnet.
     Berechnugn wird über die Diagonaleneckpunkte berechnet.
     """
-    witdh = (abs(box[0][0] - box[2][0])/pixelsPerMetric + abs(box[1][0] - box[3][0])/pixelsPerMetric) / 2
+    try:
+        witdh = (abs(box[0][0] - box[2][0])/pixelsPerMetric + abs(box[1][0] - box[3][0])/pixelsPerMetric) / 2
+    except:
+        return None
     return witdh
 
-def main(argv):
-    
-    default_file = 'messerMuenze3.jpg'
-    filename = argv[0] if len(argv) > 0 else default_file
-    # Loads an image
-    src = cv2.imread(cv2.samples.findFile(filename), cv2.IMREAD_COLOR)
-    # Check if image is loaded fine
-    if src is None:
-        print ('Fehler beim lesen des Bildpfades!')
-        return -1
-    showAndWait(src)
-    
+
+def calculateLength(src):
     gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (7, 7), 0)
-    showAndWait(gray)
+    #showAndWait(gray)
 
     rows = gray.shape[0]
     circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, rows / 8,
@@ -61,13 +59,13 @@ def main(argv):
             # circle outline
             radius = i[2] 
             cv2.circle(src, center, radius, (255, 0, 255), 3)
-    showAndWait(src)
+    #showAndWait(src)
 
 
-    print("Durchmesser", durchmesser)
+    #print("Durchmesser", durchmesser)
     pixelsPerMetric = durchmesser/muenzeSize
 
-    print("pixelsPerMetric", pixelsPerMetric)                     
+    #print("pixelsPerMetric", pixelsPerMetric)                     
         
     ret, threshed_img = cv2.threshold(cv2.cvtColor(src, cv2.COLOR_BGR2GRAY),
                     127, 255, cv2.THRESH_BINARY)
@@ -84,10 +82,9 @@ def main(argv):
         box = cv2.boxPoints(rect)
         # convert all coordinates floating point values to int
         box = np.int0(box)
-
         witdh = calcWitdh(box, pixelsPerMetric)
         length = calcLength(box, pixelsPerMetric)
-
+        
         # löscht das Rechteck aus was um das gesamte Bild gezeichnet wird
         # hierfür wird überprüft, ob eine Korrdinate 0/0 entspricht
         if (box[0][0] == 0 and box[0][1] == 0) \
@@ -101,10 +98,10 @@ def main(argv):
         # prüft, ob die länge des rechtecks mindestens x cm lang ist
         if length <= 10.0 and witdh <= 10.0:
             continue
-        
+        #print(box)
 
         filterdBoxContours.append(box)
-    showAndWait(src)
+    #showAndWait(src)
 
     obj = None
     for i, box in enumerate(filterdBoxContours):
@@ -119,9 +116,35 @@ def main(argv):
     print("Breite des Messers: ",   witdh) 
 
     showAndWait(src)
+    return(length, witdh)
 
 
-    return 0
+def main(argv):    
+
+    yourpath = 'computer-vision\data'
+    #default_file = 'computer-vision\data\IMG_5352.jpeg'
+
+    midLW = []
+    for root, dirs, files in os.walk(yourpath, topdown=False):
+        for name in files:
+            src = cv2.imread(cv2.samples.findFile(yourpath+'\\'+name), cv2.IMREAD_COLOR)
+            midLW.append(calculateLength(src))
     
+    midL = 0.0
+    midW = 0.0
+
+    for e in midLW:
+        if not np.isnan(e[0]):
+            if not np.isinf(e[0]):
+                print(e)
+                midL += e[0]
+                midW += e[1]
+        
+    midL = midL / len(midLW)
+    midW = midW / len(midLW)
+
+    print(midL)
+    print(midW)
+
 if __name__ == "__main__":
     main(sys.argv[1:])
