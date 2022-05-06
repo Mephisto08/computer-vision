@@ -1,7 +1,9 @@
 import sys
 import cv2
 import numpy as np
-from scipy.__config__ import show
+import math
+#from scipy.__config__ import show
+from scipy.spatial import distance as dist
 import pathlib
 import os
 
@@ -36,6 +38,25 @@ def calcWitdh(box, pixelsPerMetric):
         return None
     return witdh
 
+def midpoint(ptA, ptB):
+    return ((ptA[0]+ptB[0])* 0.5, (ptA[1] + ptB[1]) * 0.5)
+
+def euclideanDist(box, pixelsPerMetric):
+    (tl,tr,br,bl) = box
+
+    (tltrX, tltrY) = midpoint(tl, tr)
+    (blbrX, blbrY) = midpoint(bl, br)
+
+    (tlblX, tlblY) = midpoint(tl, bl)
+    (trbrX, trbrY) = midpoint(tr, br)
+
+    dA = dist.euclidean((tltrX,tltrY), (blbrX,blbrY))
+    dB = dist.euclidean((tlblX,tlblY), (trbrX,trbrY))
+
+    dimA = dA / pixelsPerMetric
+    dimB = dB / pixelsPerMetric
+
+    return (dimB, dimA)
 
 def calculateLength(src):
     gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
@@ -82,7 +103,7 @@ def calculateLength(src):
         box = cv2.boxPoints(rect)
         # convert all coordinates floating point values to int
         box = np.int0(box)
-        witdh = calcWitdh(box, pixelsPerMetric)
+        width = calcWitdh(box, pixelsPerMetric)
         length = calcLength(box, pixelsPerMetric)
         
         # löscht das Rechteck aus was um das gesamte Bild gezeichnet wird
@@ -93,10 +114,10 @@ def calculateLength(src):
                 or (box[3][0] == 0 and box[3][1] == 0):
             continue
         #prüft, ob die breite eines Rechtecks mindestens x cm aufweist
-        if witdh <= 1.0 and length <= 1.0:
+        if width <= 1.0 and length <= 1.0:
             continue
         # prüft, ob die länge des rechtecks mindestens x cm lang ist
-        if length <= 10.0 and witdh <= 10.0:
+        if length <= 10.0 and width <= 10.0:
             continue
         #print(box)
 
@@ -108,43 +129,54 @@ def calculateLength(src):
         # TODO: Wenn mehr als ein Element erkannt wird mit den Größen 1cm breite 10 cm länge
         obj = box
         cv2.drawContours(src, [box], 0, (0, 255, 255), 10)
- 
-    length = calcLength(box, pixelsPerMetric)
-    witdh = calcWitdh(box, pixelsPerMetric)
 
-    print("Länge des Messers: ",   length) 
-    print("Breite des Messers: ",   witdh) 
+
+    #length = calcLength(box, pixelsPerMetric)
+    #witdh = calcWitdh(box, pixelsPerMetric)
+
+    (length,width) = euclideanDist(box,pixelsPerMetric)
+
+    print("Länge des Messers: ", length)
+    print("Breite des Messers: ", width)
 
     showAndWait(src)
-    return(length, witdh)
+
+    return (length, width)
 
 
 def main(argv):    
+    singleData = True
 
-    yourpath = 'computer-vision\data'
-    #default_file = 'computer-vision\data\IMG_5352.jpeg'
+    if singleData is True:
+        default_file = '../messerMuenze4.jpg'
+        filename = argv[0] if len(argv) > 0 else default_file
+        src = cv2.imread(cv2.samples.findFile(filename), cv2.IMREAD_COLOR)
+        test = calculateLength(src)
+    else:
+        yourpath = 'computer-vision\MassiveData'
+        #default_file = 'computer-vision\data\IMG_5352.jpeg'
 
-    midLW = []
-    for root, dirs, files in os.walk(yourpath, topdown=False):
-        for name in files:
-            src = cv2.imread(cv2.samples.findFile(yourpath+'\\'+name), cv2.IMREAD_COLOR)
-            midLW.append(calculateLength(src))
-    
-    midL = 0.0
-    midW = 0.0
+        midLW = []
+        for root, dirs, files in os.walk(yourpath, topdown=False):
+            for name in files:
+                src = cv2.imread(cv2.samples.findFile(yourpath+'\\'+name), cv2.IMREAD_COLOR)
+                midLW.append(calculateLength(src))
 
-    for e in midLW:
-        if not np.isnan(e[0]):
-            if not np.isinf(e[0]):
-                print(e)
-                midL += e[0]
-                midW += e[1]
-        
-    midL = midL / len(midLW)
-    midW = midW / len(midLW)
+        midL = 0.0
+        midW = 0.0
 
-    print(midL)
-    print(midW)
+        for e in midLW:
+            if not np.isnan(e[0]):
+                if not np.isinf(e[0]):
+                    print(e)
+                    midL += e[0]
+                    midW += e[1]
+
+        midL = midL / len(midLW)
+        midW = midW / len(midLW)
+
+        print(midL)
+        print(midW)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

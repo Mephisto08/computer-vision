@@ -1,9 +1,7 @@
-<<<<<<< HEAD
-
 data/
 
 data_test/
-=======
+
 .idea
 .venv
->>>>>>> main
+MassiveData
