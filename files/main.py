@@ -53,12 +53,15 @@ def euclideanDist(box, pixelsPerMetric):
     dA = dist.euclidean((tltrX,tltrY), (blbrX,blbrY))
     dB = dist.euclidean((tlblX,tlblY), (trbrX,trbrY))
 
-    dimA = dA / pixelsPerMetric
-    dimB = dB / pixelsPerMetric
+    try:
+        dimA = dA / pixelsPerMetric
+        dimB = dB / pixelsPerMetric
+    except:
+        return (None, None)
 
     return (dimB, dimA)
 
-def calculateLength(src):
+def calculateLength(src, name):
     gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (7, 7), 0)
     #showAndWait(gray)
@@ -103,9 +106,10 @@ def calculateLength(src):
         box = cv2.boxPoints(rect)
         # convert all coordinates floating point values to int
         box = np.int0(box)
-        width = calcWitdh(box, pixelsPerMetric)
-        length = calcLength(box, pixelsPerMetric)
+        (length,width) = euclideanDist(box,pixelsPerMetric)
         
+        if length is None or width is None:
+            continue
         # löscht das Rechteck aus was um das gesamte Bild gezeichnet wird
         # hierfür wird überprüft, ob eine Korrdinate 0/0 entspricht
         if (box[0][0] == 0 and box[0][1] == 0) \
@@ -135,48 +139,65 @@ def calculateLength(src):
     #witdh = calcWitdh(box, pixelsPerMetric)
 
     (length,width) = euclideanDist(box,pixelsPerMetric)
-
+    
+    print("")
+    print("Name des Bildes: ", name)
     print("Länge des Messers: ", length)
     print("Breite des Messers: ", width)
 
-    showAndWait(src)
+    #howAndWait(src)
 
     return (length, width)
 
 
 def main(argv):    
-    singleData = True
+    singleData = False
 
-    if singleData is True:
-        default_file = '../messerMuenze4.jpg'
+    if singleData:
+        default_file = 'data_test\IMG_5511.jpeg'
         filename = argv[0] if len(argv) > 0 else default_file
         src = cv2.imread(cv2.samples.findFile(filename), cv2.IMREAD_COLOR)
         test = calculateLength(src)
     else:
-        yourpath = 'computer-vision\MassiveData'
+        yourpath = 'data'
         #default_file = 'computer-vision\data\IMG_5352.jpeg'
 
         midLW = []
         for root, dirs, files in os.walk(yourpath, topdown=False):
             for name in files:
-                src = cv2.imread(cv2.samples.findFile(yourpath+'\\'+name), cv2.IMREAD_COLOR)
-                midLW.append(calculateLength(src))
+                src = cv2.imread(cv2.samples.findFile(yourpath+'\\'+ name), cv2.IMREAD_COLOR)
+                midLW.append(calculateLength(src, name))
 
         midL = 0.0
+        midLA = []
         midW = 0.0
+        midWA = []
 
         for e in midLW:
-            if not np.isnan(e[0]):
-                if not np.isinf(e[0]):
-                    print(e)
+                # entfernt None Objekte
+                if e[0] is None or e[1] is None:
+                    continue
+                
+                # Prüft, ob Breite und Länge vertauscht sind. Fügt längeres Objekt zu länge hinzu und kleineres zur Breite
+                if e[1] > e[0]:
+                    midL += e[1]
+                    midW += e[0]
+                    midLA.append(e[1])
+                    midWA.append(e[0])
+                else:
                     midL += e[0]
                     midW += e[1]
+                    midLA.append(e[0])
+                    midWA.append(e[1])
+
 
         midL = midL / len(midLW)
         midW = midW / len(midLW)
 
         print(midL)
         print(midW)
+        for i, e in enumerate(midLA):
+            print("Länge: ", e, " , Breite: ", midWA[i])
 
 if __name__ == "__main__":
     main(sys.argv[1:])
