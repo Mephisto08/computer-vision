@@ -61,10 +61,11 @@ def euclideanDist(box, pixelsPerMetric):
 
     return (dimB, dimA)
 
-def calculateLength(src, name):
+def calculateLength(src, name, debug):
     gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (7, 7), 0)
-    #showAndWait(gray)
+    if debug:
+        showAndWait(gray)
 
     rows = gray.shape[0]
     circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1, rows / 8,
@@ -83,13 +84,13 @@ def calculateLength(src, name):
             # circle outline
             radius = i[2] 
             cv2.circle(src, center, radius, (255, 0, 255), 3)
-    #showAndWait(src)
+    if debug:
+        showAndWait(src)
+        print("Durchmesser", durchmesser)
 
-
-    #print("Durchmesser", durchmesser)
     pixelsPerMetric = durchmesser/muenzeSize
-
-    #print("pixelsPerMetric", pixelsPerMetric)                     
+    if debug:
+        print("pixelsPerMetric", pixelsPerMetric)                     
         
     ret, threshed_img = cv2.threshold(cv2.cvtColor(src, cv2.COLOR_BGR2GRAY),
                     127, 255, cv2.THRESH_BINARY)
@@ -126,7 +127,8 @@ def calculateLength(src, name):
         #print(box)
 
         filterdBoxContours.append(box)
-    #showAndWait(src)
+    if debug:
+        showAndWait(src)
 
     obj = None
     for i, box in enumerate(filterdBoxContours):
@@ -140,24 +142,25 @@ def calculateLength(src, name):
 
     (length,width) = euclideanDist(box,pixelsPerMetric)
     
-    print("")
-    print("Name des Bildes: ", name)
-    print("Länge des Messers: ", length)
-    print("Breite des Messers: ", width)
-
-    #howAndWait(src)
+    if debug:
+        print("")
+        print("Name des Bildes: ", name)
+        print("Länge des Messers: ", length)
+        print("Breite des Messers: ", width)
+        showAndWait(src)
 
     return (length, width)
 
 
 def main(argv):    
     singleData = False
+    debug = False
 
     if singleData:
         default_file = 'data_test\IMG_5511.jpeg'
         filename = argv[0] if len(argv) > 0 else default_file
         src = cv2.imread(cv2.samples.findFile(filename), cv2.IMREAD_COLOR)
-        test = calculateLength(src)
+        test = calculateLength(src, filename, debug)
     else:
         yourpath = 'data'
         #default_file = 'computer-vision\data\IMG_5352.jpeg'
@@ -166,7 +169,7 @@ def main(argv):
         for root, dirs, files in os.walk(yourpath, topdown=False):
             for name in files:
                 src = cv2.imread(cv2.samples.findFile(yourpath+'\\'+ name), cv2.IMREAD_COLOR)
-                midLW.append(calculateLength(src, name))
+                midLW.append(calculateLength(src, name, debug))
 
         midL = 0.0
         midLA = []
