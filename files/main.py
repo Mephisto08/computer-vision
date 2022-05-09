@@ -145,19 +145,24 @@ def calculateLength(src, name, debug):
     if debug:
         print("")
         print("Name des Bildes: ", name)
-        print("Länge des Messers: ", length)
-        print("Breite des Messers: ", width)
+        # Ordnet größeren Wert Länge zu
+        if length > width:
+            print("Länge des Messers: ", length)
+            print("Breite des Messers: ", width)
+        else:
+            print("Länge des Messers: ", width)
+            print("Breite des Messers: ", length)
         showAndWait(src)
 
     return (length, width)
 
 
 def main(argv):    
-    singleData = False
-    debug = False
+    singleData = True
+    debug = True
 
     if singleData:
-        default_file = 'data_test\IMG_5511.jpeg'
+        default_file = 'data_test\IMG_5354.jpeg'
         filename = argv[0] if len(argv) > 0 else default_file
         src = cv2.imread(cv2.samples.findFile(filename), cv2.IMREAD_COLOR)
         test = calculateLength(src, filename, debug)
