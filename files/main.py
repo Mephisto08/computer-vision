@@ -100,6 +100,49 @@ def calculateLength(src, name, debug):
 
     contours, hier = cv2.findContours(threshed_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
+    gray2 = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
+
+    edges = cv2.Canny(gray2, 50, 150, apertureSize=3)
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 100, minLineLength=170, maxLineGap=100)
+    wid = 0
+    len_ = 0
+    l1x1 = 0
+    l1x2 = 0
+    l1y1 = 0
+    l1y2 = 0
+    l2x1 = 0
+    l2x2 = 0
+    l2y1 = 0
+    l2y2 = 0
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        if abs(x2-x1) > 150:
+            euclDist = math.sqrt(pow(x2-x1,2)+pow(y2-y1,2))
+            print("eucldist",euclDist,"pixelsper",pixelsPerMetric)
+            tmpLen = euclDist / pixelsPerMetric
+            #print("tmplen", tmpLen)
+            if tmpLen > len_:
+                len_ = tmpLen
+                l1x1 = x1
+                l1x2 = x2
+                l1y1 = y1
+                l1y2 = y2
+        else:
+            euclDist = math.sqrt(pow(x2 - x1, 2) + pow(y2 - y1,2))
+            tmpWid = euclDist / pixelsPerMetric
+            #print("tmpwid", tmpWid)
+            if tmpWid > wid:
+                wid = tmpWid
+                l2x1 = x1
+                l2x2 = x2
+                l2y1 = y1
+                l2y2 = y2
+
+    print("wid",wid,"len",len_)
+    cv2.line(src, (l1x1, l1y1), (l1x2, l1y2), (255, 0, 0), 4)
+    cv2.line(src, (l2x1, l2y1), (l2x2, l2y2), (0, 0, 255), 4)
+
+    showAndWait(src)
     filterdBoxContours = []
     for i, c in enumerate(contours):
         # get the min area rect
@@ -162,7 +205,7 @@ def main(argv):
     debug = True
 
     if singleData:
-        default_file = 'data_test\IMG_5354.jpeg'
+        default_file = '../data_test/messerMuenze4.jpg'
         filename = argv[0] if len(argv) > 0 else default_file
         src = cv2.imread(cv2.samples.findFile(filename), cv2.IMREAD_COLOR)
         test = calculateLength(src, filename, debug)
